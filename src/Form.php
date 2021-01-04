@@ -4,12 +4,12 @@ namespace AbdallaMohammed\Form;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
 use Illuminate\Session\Store as Session;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Contracts\Support\Responsable;
-use Illuminate\Validation\Rule;
 
 class Form implements Responsable, Arrayable
 {
@@ -343,9 +343,7 @@ class Form implements Responsable, Arrayable
                 return $response;
             }
 
-            if (config('laravel_multistep_forms.enable_data_saving', true)) {
-                $this->save($this->validate());
-            }
+            $this->save($this->validate());
 
             if ($response = (
                 $this->handleAfter('*') ??
@@ -367,7 +365,7 @@ class Form implements Responsable, Arrayable
      */
     protected function setupSession(): void
     {
-        if (! is_numeric($this->getValue('step', false))) {
+        if (! is_numeric($this->getValue('step', false)) && config('laravel-mutlistep-forms.enable_session', true)) {
             $this->setValue('step', 1);
         }
     }
