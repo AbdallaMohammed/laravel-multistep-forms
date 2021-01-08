@@ -24,7 +24,7 @@
     },
     "autoload": {
         "psr-4": {
-            "AbdallaMohammed\\Forms\\": "src/"
+            "AbdallaMohammed\\Form\\": "src/"
         }
     },
     "autoload-dev": {

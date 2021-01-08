@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\View;
 use Illuminate\Session\Store as Session;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Contracts\Support\Responsable;
@@ -22,6 +23,16 @@ class Form implements Responsable, Arrayable
      * @var string
      */
     protected $method = 'POST';
+
+    /**
+     * @var string
+     */
+    protected $view = '';
+
+    /**
+     * @var string
+     */
+    protected $data = [];
 
     /**
      * @var Request
@@ -327,6 +338,17 @@ class Form implements Responsable, Arrayable
     }
 
     /**
+     * @param mixed ...$params
+     */
+    public function useView(...$params)
+    {
+        $this->view = func_get_arg(0);
+        $this->data = is_array(func_get_arg(1)) ? func_get_arg(1) : [];
+
+        return $this;
+    }
+
+    /**
      * Handle the validated request.
      *
      * @return mixed
@@ -373,13 +395,41 @@ class Form implements Responsable, Arrayable
     /**
      * Render the request as a response.
      *
-     * @return JsonResponse
+     * @return JsonResponse|\Illuminate\Http\RedirectResponse|\Illuminate\Contracts\View\View
      */
     protected function renderResponse()
     {
-        return new JsonResponse((object) [
-            'form' => $this->toArray(),
-        ]);
+        if (! $this->usesViews() || $this->needsJsonResponse()) {
+            return new JsonResponse((object) [
+                'form' => $this->toArray(),
+            ]);
+        }
+
+        if (! $this->request->isMethod('GET')) {
+            return redirect()->back();
+        }
+
+        return View::make($this->view, array_merge([
+            'form' => $this,
+        ], $this->data));
+    }
+
+    /**
+     * Request needs JSON response.
+     *
+     * @return bool
+     */
+    protected function needsJsonResponse(): bool
+    {
+        return $this->request->wantsJson() || $this->request->isXmlHttpRequest();
+    }
+
+    /**
+     * @return bool
+     */
+    protected function usesViews(): bool
+    {
+        return ! empty($this->view) && is_string($this->view);
     }
 
     /**
