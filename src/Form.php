@@ -369,7 +369,7 @@ class Form implements Responsable, Arrayable
         $data = [];
         if ((is_integer($condition) && $this->isStep($this->getStepId($condition)))
             || (is_bool($condition) && $condition === true)
-            || (is_callable($condition) && is_bool(value($condition($this))))) {
+            || (is_callable($condition) && is_bool(value($condition($this))) && value($condition($this)) === true)) {
             $data = value($callback($this));
         }
 
