@@ -194,8 +194,8 @@ class Form implements Responsable, Arrayable
     public function lastStep(): int
     {
         return $this->steps->keys()->filter(function ($value) {
-            return is_int($value);
-        })->max() ?? 1;
+                return is_int($value);
+            })->max() ?? 1;
     }
 
     /**
@@ -343,9 +343,64 @@ class Form implements Responsable, Arrayable
     public function useView(...$params)
     {
         $this->view = func_get_arg(0);
-        $this->data = is_array(func_get_arg(1)) ? func_get_arg(1) : [];
+        $this->data = array_merge($this->data, is_array(func_get_arg(1)) ? func_get_arg(1) : []);
 
         return $this;
+    }
+
+    /**
+     * @param array $data
+     * @return $this
+     */
+    public function mergeData(array $data)
+    {
+        $this->data = array_merge($data, $this->data);
+
+        return $this;
+    }
+
+    /**
+     * @param mixed $condition
+     * @param Closure $callback
+     * @return $this
+     */
+    public function mergeDataWhen($condition, Closure $callback)
+    {
+        $data = [];
+        if ((is_integer($condition) && $this->isStep($this->getStepId($condition)))
+            || (is_bool($condition) && $condition === true)
+            || (is_callable($condition) && is_bool(value($condition($this))))) {
+            $data = value($callback($this));
+        }
+
+        $this->data = array_merge($data, $this->data);
+
+        return $this;
+    }
+
+
+    /**
+     * Tap into instance (invokable classes).
+     *
+     * @param Closure|mixed $closure
+     * @return $this
+     */
+    public function tap(Closure $closure): self
+    {
+        $closure($this);
+
+        return $this;
+    }
+
+    /**
+     * @param int $stepId
+     * @return Step
+     */
+    public function getStepInstance(int $stepId): Step
+    {
+        return $this->steps->filter(function ($step) use ($stepId) {
+            return $step->getId() == $stepId;
+        })->first();
     }
 
     /**
@@ -492,19 +547,6 @@ class Form implements Responsable, Arrayable
         if ($callback = $this->after->get($key)) {
             return $callback($this, $this->steps->get($key));
         }
-    }
-
-    /**
-     * Tap into instance (invokable classes).
-     *
-     * @param Closure|mixed $closure
-     * @return $this
-     */
-    protected function tap(Closure $closure): self
-    {
-        $closure($this);
-
-        return $this;
     }
 
     /**
